@@ -1,5 +1,5 @@
 import * as THREE from 'three/webgpu'
-import { Fn, fract, positionLocal, color } from 'three/tsl'
+import { Fn, fract, positionLocal, length, step } from 'three/tsl'
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
 
 const scene = new THREE.Scene()
@@ -24,28 +24,25 @@ window.addEventListener('resize', function () {
 })
 
 const controls = new OrbitControls(camera, renderer.domElement)
-controls.enableDamping = true
+controls.enableDamping = true;
 
 const main = Fn(() => {
     const p = positionLocal.toVar();
-    
     return p
 });
 
-const material = new THREE.NodeMaterial(); // 퐁, 베이직과 같은 재질이 아님 
-// material.fragmentNode = positionLocal.x.fract();
-material.fragmentNode = fract( positionLocal.mul(9.9) );
-
-const mesh = new THREE.Mesh(new THREE.BoxGeometry(), material)
+const material = new THREE.NodeMaterial();
+// material.fragmentNode = fract( positionLocal.zx.mul(4.99) ).step(.1); // fract() > 타일링 효과, .step을 적용 > 줄 두께 변화
+material.fragmentNode = step( 0.5, length( positionLocal ).mul(15).fract() );
+const mesh = new THREE.Mesh(new THREE.PlaneGeometry(), material)
 scene.add(mesh);
 
-renderer.debug.getShaderAsync(scene, camera, mesh).then((e) => {
-    console.log(e.vertexShader)
-    // console.log(e.fragmentShader)
-  })
+// renderer.debug.getShaderAsync(scene, camera, mesh).then((e) => {
+//     console.log(e.vertexShader)
+//     console.log(e.fragmentShader)
+// })
 
 function animate() {
   controls.update()
-
   renderer.render(scene, camera)
 }
