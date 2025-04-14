@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TSL, Creating Line</title>
+    
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://cdn.jsdelivr.net/npm/three@0.175.0/build/three.webgpu.js",
+                "three/webgpu": "https://cdn.jsdelivr.net/npm/three@0.175.0/build/three.webgpu.js",
+                "three/tsl": "https://cdn.jsdelivr.net/npm/three@0.175.0/build/three.tsl.js",
+                "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.175.0/examples/jsm/"
+            }
+        }
+    </script>
+    <style>
+        #mogl-viewport {
+            width: 640px;
+            height: 480px;
+            background-image: linear-gradient(to bottom, #686d87, #14131b );
+        }
+    </style>
+</head>
+<body>
+    <div id="mogl-viewport"></div>
+    <script type="module">
+        import * as THREE from 'three/webgpu';
+        import { Fn, positionLocal, length, dot, vec2, vec3, mul, sub, add, div, cos, sin, step, abs, max, clamp, smoothstep } from 'three/tsl';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+        const view_ = document.querySelector('#mogl-viewport');
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera( 75, view_.clientWidth / view_.clientHeight, .1, 10 );
+        camera.position.z = 1;
+
+        const renderer = new THREE.WebGPURenderer();
+        renderer.setSize( view_.clientWidth, view_.clientHeight );
+        view_.appendChild( renderer.domElement );
+        renderer.setAnimationLoop( animate );
+
+        const controls = new OrbitControls( camera, renderer.domElement );
+        controls.enableDamping = true;
+
+        /* 라인 생성*/
+        const Line = Fn(([position, direction, distance, thickness]) => {
+            const projection = dot( position, direction );
+            const dist = abs( projection.sub( distance ) );
+            const line = step( dist, thickness );
+            return line;
+        });
+
+        const verticalBar = Fn(([ position, x_center, height, thickness ]) => {
+            const x = position.x;
+            const y = position.y.mul(-1.0).add(0.6);// 중앙 기준으로 위로 이동
+
+            // X축 방향으로 두께 안에 들어오는 영역
+            const xDist = abs(x.sub(x_center));
+            const inBar = step(xDist, thickness); // 막대 굵기 내에 있으면 1
+
+            // Y축 방향으로 height보다 아래에 있으면 보이게
+            const visibleY = step(y, height).mul(-1.0).add(1.0); // = y < height ? 1 : 0
+
+            // 최종 출력
+            return inBar.mul(visibleY);
+        });
+
+        const main = Fn(() => {
+            const p = positionLocal.toVar();
+            const thickness = 0.05;
+
+            // X 위치를 일정 간격으로 배치
+            const x0 = -0.45;
+            const gap = 0.15;
+
+            // 각각 다른 높이 지정
+            const line0 = verticalBar(p, -0.45, 0.3, thickness);
+            const line1 = verticalBar(p, -0.3, 0.5, thickness);
+            const line2 = verticalBar(p, -0.15, 0.2, thickness);
+            const line3 = verticalBar(p,  0.0, 0.6, thickness);
+            const line4 = verticalBar(p,  0.15, 0.43, thickness);
+            const line5 = verticalBar(p,  0.3, 0.28, thickness);
+            const line6 = verticalBar(p,  0.45, 0.82, thickness);
+            return max(line0, line1, line2, line3, line4, line5, line6);
+        });
+
+        const material = new THREE.NodeMaterial();
+        material.fragmentNode = main();
+
+        const mesh = new THREE.Mesh( new THREE.PlaneGeometry(), material );
+        scene.add( mesh );
+
+        function animate() {
+            controls.update();
+            renderer.render( scene, camera );
+        }
+    </script>
+
+</body>
+</html>
+
+

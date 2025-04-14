@@ -1,5 +1,5 @@
 import * as THREE from 'three/webgpu'
-import { abs, If, Fn, vec2, color, texture, convertColorSpace, positionLocal, rotateUV, time } from 'three/tsl'
+import { Fn, positionLocal } from 'three/tsl'
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
 
 const scene = new THREE.Scene()
@@ -28,26 +28,16 @@ controls.enableDamping = true
 
 const main = Fn(() => {
     const p = positionLocal;
-    
     return p
 });
 
 const material = new THREE.NodeMaterial(); // 퐁, 베이직과 같은 재질이 아님 
-material.fragmentNode = color('crimson');
-
 material.fragmentNode = main();
-
 
 const mesh = new THREE.Mesh(new THREE.PlaneGeometry(), material)
 scene.add(mesh);
 
-renderer.debug.getShaderAsync(scene, camera, mesh).then((e) => {
-    console.log(e.vertexShader)
-    // console.log(e.fragmentShader)
-  })
-
 function animate() {
   controls.update()
-
   renderer.render(scene, camera)
 }
